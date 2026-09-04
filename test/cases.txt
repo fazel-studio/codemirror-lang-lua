@@ -1,0 +1,707 @@
+# Empty chunk
+
+==>
+Chunk(Block)
+
+# Whitespace only
+   
+  	
+
+==>
+Chunk(Block)
+
+# Assignment single
+a = 1
+==>
+Chunk(Block(Assignment(Var(Atom(VariableName)),"=",ExpList(Exp(Number)))))
+
+# Assignment multiple
+a, b = 1, 2
+==>
+Chunk(Block(Assignment(Var(Atom(VariableName)),",",Var(Atom(VariableName)),"=",ExpList(Exp(Number),",",Exp(Number)))))
+
+# Function call with parentheses
+print("hello")
+==>
+Chunk(Block(CallStatement(CallPrefix(Atom(VariableName),ParenCall(ParenArgs("(",ExpList(Exp(String)),")"))))))
+
+# Function call sugar string
+print "hello"
+==>
+Chunk(Block(CallStatement(CallPrefix(Atom(VariableName),SugarCall(SugarArgs(String))))))
+
+# Function call sugar table
+type{}
+==>
+Chunk(Block(CallStatement(CallPrefix(Atom(VariableName),SugarCall(SugarArgs(TableConstructor("{","}")))))))
+
+# Function call sugar table with content
+type{1, 2, 3}
+==>
+Chunk(Block(CallStatement(CallPrefix(Atom(VariableName),SugarCall(SugarArgs(TableConstructor("{",FieldList(Field(ExpField(Exp(Number))),FieldSep(","),Field(ExpField(Exp(Number))),FieldSep(","),Field(ExpField(Exp(Number)))),"}")))))))
+
+# Do block
+do local x = 1 print(x) end
+==>
+Chunk(Block(DoBlock(do,Block(LocalDeclaration(local,AttNameList(AttName(VariableName)),"=",ExpList(Exp(Number))),CallStatement(CallPrefix(Atom(VariableName),ParenCall(ParenArgs("(",ExpList(Exp(PrefixExp(Atom(VariableName)))),")"))))),end)))
+
+# While loop
+while true do print(1) end
+==>
+Chunk(Block(WhileBlock(while,Exp(true),do,Block(CallStatement(CallPrefix(Atom(VariableName),ParenCall(ParenArgs("(",ExpList(Exp(Number)),")"))))),end)))
+
+# Repeat until
+repeat print(1) until true
+==>
+Chunk(Block(RepeatBlock(repeat,Block(CallStatement(CallPrefix(Atom(VariableName),ParenCall(ParenArgs("(",ExpList(Exp(Number)),")"))))),until,Exp(true))))
+
+# If simple
+if true then print(1) end
+==>
+Chunk(Block(IfStatement(if,Exp(true),then,Block(CallStatement(CallPrefix(Atom(VariableName),ParenCall(ParenArgs("(",ExpList(Exp(Number)),")"))))),end)))
+
+# If elseif else
+if x > 5 then print(1) elseif x > 0 then print(2) else print(3) end
+==>
+Chunk(Block(IfStatement(if,Exp(BinaryExpression(Exp(PrefixExp(Atom(VariableName))),">",Exp(Number))),then,Block(CallStatement(CallPrefix(Atom(VariableName),ParenCall(ParenArgs("(",ExpList(Exp(Number)),")"))))),elseif,Exp(BinaryExpression(Exp(PrefixExp(Atom(VariableName))),">",Exp(Number))),then,Block(CallStatement(CallPrefix(Atom(VariableName),ParenCall(ParenArgs("(",ExpList(Exp(Number)),")"))))),else,Block(CallStatement(CallPrefix(Atom(VariableName),ParenCall(ParenArgs("(",ExpList(Exp(Number)),")"))))),end)))
+
+# For numeric
+for i = 1, 10 do print(i) end
+==>
+Chunk(Block(ForStatement(for,ForNumeric(VariableName,"=",Exp(Number),",",Exp(Number)),do,Block(CallStatement(CallPrefix(Atom(VariableName),ParenCall(ParenArgs("(",ExpList(Exp(PrefixExp(Atom(VariableName)))),")"))))),end)))
+
+# For numeric with step
+for i = 1, 10, 2 do print(i) end
+==>
+Chunk(Block(ForStatement(for,ForNumeric(VariableName,"=",Exp(Number),",",Exp(Number),",",Exp(Number)),do,Block(CallStatement(CallPrefix(Atom(VariableName),ParenCall(ParenArgs("(",ExpList(Exp(PrefixExp(Atom(VariableName)))),")"))))),end)))
+
+# For generic
+for k, v in pairs(t) do print(k, v) end
+==>
+Chunk(Block(ForStatement(for,ForGeneric(NameList(VariableName,",",VariableName),in,ExpList(Exp(PrefixExp(CallPrefix(Atom(VariableName),ParenCall(ParenArgs("(",ExpList(Exp(PrefixExp(Atom(VariableName)))),")"))))))),do,Block(CallStatement(CallPrefix(Atom(VariableName),ParenCall(ParenArgs("(",ExpList(Exp(PrefixExp(Atom(VariableName))),",",Exp(PrefixExp(Atom(VariableName)))),")"))))),end)))
+
+# Function declaration
+function foo() end
+==>
+Chunk(Block(FunctionDeclaration(function,FuncName(Identifier),FunctionBody("(",")",Block,end))))
+
+# Function with params
+function foo(a, b) return a + b end
+==>
+Chunk(Block(FunctionDeclaration(function,FuncName(Identifier),FunctionBody("(",ParamList(VariableName,",",VariableName),")",Block(ReturnStatement(return,ExpList(Exp(BinaryExpression(Exp(PrefixExp(Atom(VariableName))),"+",Exp(PrefixExp(Atom(VariableName)))))))),end))))
+
+# Function vararg
+function foo(...) return ... end
+==>
+Chunk(Block(FunctionDeclaration(function,FuncName(Identifier),FunctionBody("(",ParamList(Ellipsis("...")),")",Block(ReturnStatement(return,ExpList(Exp(Ellipsis("..."))))),end))))
+
+# Function vararg with params
+function foo(a, b, ...) return a end
+==>
+Chunk(Block(FunctionDeclaration(function,FuncName(Identifier),FunctionBody("(",ParamList(VariableName,",",VariableName,",",Ellipsis("...")),")",Block(ReturnStatement(return,ExpList(Exp(PrefixExp(Atom(VariableName)))))),end))))
+
+# Local declaration
+local x = 10
+==>
+Chunk(Block(LocalDeclaration(local,AttNameList(AttName(VariableName)),"=",ExpList(Exp(Number)))))
+
+# Local multiple
+local a, b = 1, 2
+==>
+Chunk(Block(LocalDeclaration(local,AttNameList(AttName(VariableName),",",AttName(VariableName)),"=",ExpList(Exp(Number),",",Exp(Number)))))
+
+# Local function
+local function foo() return 1 end
+==>
+Chunk(Block(LocalFunctionDeclaration(local,function,VariableName,FunctionBody("(",")",Block(ReturnStatement(return,ExpList(Exp(Number)))),end))))
+
+# Local without value
+local x, y
+==>
+Chunk(Block(LocalDeclaration(local,AttNameList(AttName(VariableName),",",AttName(VariableName)))))
+
+# Local with attribute const
+local x <const> = 10
+==>
+Chunk(Block(LocalDeclaration(local,AttNameList(AttName(VariableName,"<",Identifier,">")),"=",ExpList(Exp(Number)))))
+
+# Local with attribute close
+local f <close> = io.open('file')
+==>
+Chunk(Block(LocalDeclaration(local,AttNameList(AttName(VariableName,"<",Identifier,">")),"=",ExpList(Exp(PrefixExp(CallPrefix(Atom(VariableName),IndexProp(".",Identifier),ParenCall(ParenArgs("(",ExpList(Exp(String)),")")))))))))
+
+# Label
+::retry::
+==>
+Chunk(Block(Label("::",LabelName,"::")))
+
+# Goto
+goto retry
+==>
+Chunk(Block(GotoStatement(goto,LabelName)))
+
+# Label and goto
+::retry::
+local ok = do_something()
+if not ok then goto retry end
+==>
+Chunk(Block(Label("::",LabelName,"::"),LocalDeclaration(local,AttNameList(AttName(VariableName)),"=",ExpList(Exp(PrefixExp(CallPrefix(Atom(VariableName),ParenCall(ParenArgs("(",")"))))))),IfStatement(if,Exp(UnaryExpression(not,Exp(PrefixExp(Atom(VariableName))))),then,Block(GotoStatement(goto,LabelName)),end)))
+
+# Return empty
+return
+==>
+Chunk(Block(ReturnStatement(return)))
+
+# Return multiple
+return 1, 2, 3
+==>
+Chunk(Block(ReturnStatement(return,ExpList(Exp(Number),",",Exp(Number),",",Exp(Number)))))
+
+# Break
+while true do break end
+==>
+Chunk(Block(WhileBlock(while,Exp(true),do,Block(break),end)))
+
+# Table empty
+local t = {}
+==>
+Chunk(Block(LocalDeclaration(local,AttNameList(AttName(VariableName)),"=",ExpList(Exp(TableConstructor("{","}"))))))
+
+# Table array style
+local t = {1, 2, 3}
+==>
+Chunk(Block(LocalDeclaration(local,AttNameList(AttName(VariableName)),"=",ExpList(Exp(TableConstructor("{",FieldList(Field(ExpField(Exp(Number))),FieldSep(","),Field(ExpField(Exp(Number))),FieldSep(","),Field(ExpField(Exp(Number)))),"}"))))))
+
+# Table record style
+local t = {name = "Alice", age = 30}
+==>
+Chunk(Block(LocalDeclaration(local,AttNameList(AttName(VariableName)),"=",ExpList(Exp(TableConstructor("{",FieldList(Field(NamedField(FieldName(Identifier),"=",Exp(String))),FieldSep(","),Field(NamedField(FieldName(Identifier),"=",Exp(Number)))),"}"))))))
+
+# Table mixed
+local t = {host = "localhost", port = 8080, {name = "item1"}}
+==>
+Chunk(Block(LocalDeclaration(local,AttNameList(AttName(VariableName)),"=",ExpList(Exp(TableConstructor("{",FieldList(Field(NamedField(FieldName(Identifier),"=",Exp(String))),FieldSep(","),Field(NamedField(FieldName(Identifier),"=",Exp(Number))),FieldSep(","),Field(ExpField(Exp(TableConstructor("{",FieldList(Field(NamedField(FieldName(Identifier),"=",Exp(String)))),"}"))))),"}"))))))
+
+# Table bracket key
+local t = {["key with space"] = "value"}
+==>
+Chunk(Block(LocalDeclaration(local,AttNameList(AttName(VariableName)),"=",ExpList(Exp(TableConstructor("{",FieldList(Field(BracketField("[",Exp(String),"]","=",Exp(String)))),"}"))))))
+
+# Table nested
+local t = {{1, 2}, {3, 4}}
+==>
+Chunk(Block(LocalDeclaration(local,AttNameList(AttName(VariableName)),"=",ExpList(Exp(TableConstructor("{",FieldList(Field(ExpField(Exp(TableConstructor("{",FieldList(Field(ExpField(Exp(Number))),FieldSep(","),Field(ExpField(Exp(Number)))),"}")))),FieldSep(","),Field(ExpField(Exp(TableConstructor("{",FieldList(Field(ExpField(Exp(Number))),FieldSep(","),Field(ExpField(Exp(Number)))),"}"))))),"}"))))))
+
+# Function definition expression
+local f = function(a, b) return a + b end
+==>
+Chunk(Block(LocalDeclaration(local,AttNameList(AttName(VariableName)),"=",ExpList(Exp(FunctionDef(function,FunctionBody("(",ParamList(VariableName,",",VariableName),")",Block(ReturnStatement(return,ExpList(Exp(BinaryExpression(Exp(PrefixExp(Atom(VariableName))),"+",Exp(PrefixExp(Atom(VariableName)))))))),end)))))))
+
+# Method definition colon
+function obj:method(param) self.value = param end
+==>
+Chunk(Block(FunctionDeclaration(function,FuncName(Identifier,":",Identifier),FunctionBody("(",ParamList(VariableName),")",Block(Assignment(Var(Atom(VariableName),IndexProp(".",Identifier)),"=",ExpList(Exp(PrefixExp(Atom(VariableName)))))),end))))
+
+# Method definition dot
+function obj.method(x) return x end
+==>
+Chunk(Block(FunctionDeclaration(function,FuncName(Identifier,".",Identifier),FunctionBody("(",ParamList(VariableName),")",Block(ReturnStatement(return,ExpList(Exp(PrefixExp(Atom(VariableName)))))),end))))
+
+# Method call colon
+obj:method(1, 2)
+==>
+Chunk(Block(CallStatement(CallPrefix(Atom(VariableName),ParenCall(":",Identifier,ParenArgs("(",ExpList(Exp(Number),",",Exp(Number)),")"))))))
+
+# Method call sugar
+obj:method "hello"
+==>
+Chunk(Block(CallStatement(CallPrefix(Atom(VariableName),SugarCall(":",Identifier,SugarArgs(String))))))
+
+# String double quoted
+local s = "hello"
+==>
+Chunk(Block(LocalDeclaration(local,AttNameList(AttName(VariableName)),"=",ExpList(Exp(String)))))
+
+# String single quoted
+local s = 'hello'
+==>
+Chunk(Block(LocalDeclaration(local,AttNameList(AttName(VariableName)),"=",ExpList(Exp(String)))))
+
+# String with escapes
+local s = "hello\n\t\""
+==>
+Chunk(Block(LocalDeclaration(local,AttNameList(AttName(VariableName)),"=",ExpList(Exp(String)))))
+
+# Long string level 0
+local s = [[hello]]
+==>
+Chunk(Block(LocalDeclaration(local,AttNameList(AttName(VariableName)),"=",ExpList(Exp(LongString)))))
+
+# Long string level 0 multiline
+local s = [[
+multi-line string
+with "quotes" and 'single quotes'
+]]
+==>
+Chunk(Block(LocalDeclaration(local,AttNameList(AttName(VariableName)),"=",ExpList(Exp(LongString)))))
+
+# Long string level 1
+local s = [=[hello [[nested]] hello]=]
+==>
+Chunk(Block(LocalDeclaration(local,AttNameList(AttName(VariableName)),"=",ExpList(Exp(LongString)))))
+
+# Long string level 2
+local s = [==[hello [=[nested]=] hello]==]
+==>
+Chunk(Block(LocalDeclaration(local,AttNameList(AttName(VariableName)),"=",ExpList(Exp(LongString)))))
+
+# Number integer
+local x = 10
+==>
+Chunk(Block(LocalDeclaration(local,AttNameList(AttName(VariableName)),"=",ExpList(Exp(Number)))))
+
+# Number negative
+local x = -5
+==>
+Chunk(Block(LocalDeclaration(local,AttNameList(AttName(VariableName)),"=",ExpList(Exp(UnaryExpression("-",Exp(Number)))))))
+
+# Number float
+local x = 3.14
+==>
+Chunk(Block(LocalDeclaration(local,AttNameList(AttName(VariableName)),"=",ExpList(Exp(Number)))))
+
+# Number float leading dot
+local x = .5
+==>
+Chunk(Block(LocalDeclaration(local,AttNameList(AttName(VariableName)),"=",ExpList(Exp(Number)))))
+
+# Number scientific
+local x = 2e10
+==>
+Chunk(Block(LocalDeclaration(local,AttNameList(AttName(VariableName)),"=",ExpList(Exp(Number)))))
+
+# Number hex
+local x = 0xFF
+==>
+Chunk(Block(LocalDeclaration(local,AttNameList(AttName(VariableName)),"=",ExpList(Exp(Number)))))
+
+# Number hex float
+local x = 0x1.8p10
+==>
+Chunk(Block(LocalDeclaration(local,AttNameList(AttName(VariableName)),"=",ExpList(Exp(Number)))))
+
+# Number binary
+local x = 0b1010
+==>
+Chunk(Block(LocalDeclaration(local,AttNameList(AttName(VariableName)),"=",ExpList(Exp(Number)))))
+
+# Number underscore
+local x = 1_000_000
+==>
+Chunk(Block(LocalDeclaration(local,AttNameList(AttName(VariableName)),"=",ExpList(Exp(Number)))))
+
+# Number underscore hex
+local x = 0xFF_FF
+==>
+Chunk(Block(LocalDeclaration(local,AttNameList(AttName(VariableName)),"=",ExpList(Exp(Number)))))
+
+# Line comment
+-- comment
+==>
+Chunk(LineComment,Block)
+
+# Line comment after code
+local x = 10 -- comment
+==>
+Chunk(Block(LocalDeclaration(local,AttNameList(AttName(VariableName)),"=",ExpList(Exp(Number)))),LineComment)
+
+# Block comment
+--[[ comment ]]
+==>
+Chunk(BlockComment,Block)
+
+# Block comment level 1
+--[=[ comment ]=]
+==>
+Chunk(BlockComment,Block)
+
+# Block comment level 2
+--[==[ comment ]==]
+==>
+Chunk(BlockComment,Block)
+
+# Block comment after code
+local x = 10 --[[ comment ]]
+==>
+Chunk(Block(LocalDeclaration(local,AttNameList(AttName(VariableName)),"=",ExpList(Exp(Number)))),BlockComment)
+
+# Arithmetic expression
+local x = 1 + 2 - 3 * 4 / 5 % 6 // 7 ^ 8
+==>
+Chunk(Block(LocalDeclaration(local,AttNameList(AttName(VariableName)),"=",ExpList(Exp(BinaryExpression(Exp(BinaryExpression(Exp(Number),"+",Exp(Number))),"-",Exp(BinaryExpression(Exp(BinaryExpression(Exp(BinaryExpression(Exp(BinaryExpression(Exp(Number),"*",Exp(Number))),"/",Exp(Number))),"%",Exp(Number))),"//",Exp(BinaryExpression(Exp(Number),"^",Exp(Number)))))))))))
+
+# Bitwise expression
+local x = a & b | c ~ d << 2 >> 1
+==>
+Chunk(Block(LocalDeclaration(local,AttNameList(AttName(VariableName)),"=",ExpList(Exp(BinaryExpression(Exp(BinaryExpression(Exp(PrefixExp(Atom(VariableName))),"&",Exp(PrefixExp(Atom(VariableName))))),"|",Exp(BinaryExpression(Exp(PrefixExp(Atom(VariableName))),"~",Exp(BinaryExpression(Exp(BinaryExpression(Exp(PrefixExp(Atom(VariableName))),"<<",Exp(Number))),">>",Exp(Number)))))))))))
+
+# Relational expression
+local x = (a < b) and (a <= b) and (a > b) and (a >= b) and (a == b) and (a ~= b)
+==>
+Chunk(Block(LocalDeclaration(local,AttNameList(AttName(VariableName)),"=",ExpList(Exp(BinaryExpression(Exp(BinaryExpression(Exp(BinaryExpression(Exp(BinaryExpression(Exp(BinaryExpression(Exp(PrefixExp(Atom(Parens("(",Exp(BinaryExpression(Exp(PrefixExp(Atom(VariableName))),"<",Exp(PrefixExp(Atom(VariableName))))),")")))),and,Exp(PrefixExp(Atom(Parens("(",Exp(BinaryExpression(Exp(PrefixExp(Atom(VariableName))),"<=",Exp(PrefixExp(Atom(VariableName))))),")")))))),and,Exp(PrefixExp(Atom(Parens("(",Exp(BinaryExpression(Exp(PrefixExp(Atom(VariableName))),">",Exp(PrefixExp(Atom(VariableName))))),")")))))),and,Exp(PrefixExp(Atom(Parens("(",Exp(BinaryExpression(Exp(PrefixExp(Atom(VariableName))),">=",Exp(PrefixExp(Atom(VariableName))))),")")))))),and,Exp(PrefixExp(Atom(Parens("(",Exp(BinaryExpression(Exp(PrefixExp(Atom(VariableName))),"==",Exp(PrefixExp(Atom(VariableName))))),")")))))),and,Exp(PrefixExp(Atom(Parens("(",Exp(BinaryExpression(Exp(PrefixExp(Atom(VariableName))),"~=",Exp(PrefixExp(Atom(VariableName))))),")"))))))))))
+
+# Logical expression
+local x = a and b or not c
+==>
+Chunk(Block(LocalDeclaration(local,AttNameList(AttName(VariableName)),"=",ExpList(Exp(BinaryExpression(Exp(BinaryExpression(Exp(PrefixExp(Atom(VariableName))),and,Exp(PrefixExp(Atom(VariableName))))),or,Exp(UnaryExpression(not,Exp(PrefixExp(Atom(VariableName)))))))))))
+
+# Concatenation
+local x = "Hello" .. " " .. "World"
+==>
+Chunk(Block(LocalDeclaration(local,AttNameList(AttName(VariableName)),"=",ExpList(Exp(BinaryExpression(Exp(String),"..",Exp(BinaryExpression(Exp(String),"..",Exp(String)))))))))
+
+# Length operator
+local x = #array; local y = #"string"
+==>
+Chunk(Block(LocalDeclaration(local,AttNameList(AttName(VariableName)),"=",ExpList(Exp(UnaryExpression("#",Exp(PrefixExp(Atom(VariableName))))))),";",LocalDeclaration(local,AttNameList(AttName(VariableName)),"=",ExpList(Exp(UnaryExpression("#",Exp(String)))))))
+
+# Parentheses expression
+local x = (a + b) * c
+==>
+Chunk(Block(LocalDeclaration(local,AttNameList(AttName(VariableName)),"=",ExpList(Exp(BinaryExpression(Exp(PrefixExp(Atom(Parens("(",Exp(BinaryExpression(Exp(PrefixExp(Atom(VariableName))),"+",Exp(PrefixExp(Atom(VariableName))))),")")))),"*",Exp(PrefixExp(Atom(VariableName)))))))))
+
+# Nested expression precedence
+local x = a + b * c ^ d // e % f - g & h | i << j >> k .. l < m and n or o
+==>
+Chunk(Block(LocalDeclaration(local,AttNameList(AttName(VariableName)),"=",ExpList(Exp(BinaryExpression(Exp(BinaryExpression(Exp(BinaryExpression(Exp(BinaryExpression(Exp(BinaryExpression(Exp(BinaryExpression(Exp(BinaryExpression(Exp(PrefixExp(Atom(VariableName))),"+",Exp(BinaryExpression(Exp(BinaryExpression(Exp(BinaryExpression(Exp(PrefixExp(Atom(VariableName))),"*",Exp(BinaryExpression(Exp(PrefixExp(Atom(VariableName))),"^",Exp(PrefixExp(Atom(VariableName))))))),"//",Exp(PrefixExp(Atom(VariableName))))),"%",Exp(PrefixExp(Atom(VariableName))))))),"-",Exp(PrefixExp(Atom(VariableName))))),"&",Exp(PrefixExp(Atom(VariableName))))),"|",Exp(BinaryExpression(Exp(BinaryExpression(Exp(PrefixExp(Atom(VariableName))),"<<",Exp(PrefixExp(Atom(VariableName))))),">>",Exp(BinaryExpression(Exp(PrefixExp(Atom(VariableName))),"..",Exp(PrefixExp(Atom(VariableName))))))))),"<",Exp(PrefixExp(Atom(VariableName))))),and,Exp(PrefixExp(Atom(VariableName))))),or,Exp(PrefixExp(Atom(VariableName)))))))))
+
+# Vararg
+function sum(...) return select("#", ...) end
+==>
+Chunk(Block(FunctionDeclaration(function,FuncName(Identifier),FunctionBody("(",ParamList(Ellipsis("...")),")",Block(ReturnStatement(return,ExpList(Exp(PrefixExp(CallPrefix(Atom(VariableName),ParenCall(ParenArgs("(",ExpList(Exp(String),",",Exp(Ellipsis("..."))),")")))))))),end))))
+
+# Multiple return
+function get() return a, b, c end
+==>
+Chunk(Block(FunctionDeclaration(function,FuncName(Identifier),FunctionBody("(",")",Block(ReturnStatement(return,ExpList(Exp(PrefixExp(Atom(VariableName))),",",Exp(PrefixExp(Atom(VariableName))),",",Exp(PrefixExp(Atom(VariableName)))))),end))))
+
+# Function call chaining
+foo():bar():baz()
+==>
+Chunk(Block(CallStatement(CallPrefix(Atom(VariableName),ParenCall(ParenArgs("(",")")),ParenCall(":",Identifier,ParenArgs("(",")")),ParenCall(":",Identifier,ParenArgs("(",")"))))))
+
+# Function call chaining with args
+print("a"):format("b")
+==>
+Chunk(Block(CallStatement(CallPrefix(Atom(VariableName),ParenCall(ParenArgs("(",ExpList(Exp(String)),")")),ParenCall(":",Identifier,ParenArgs("(",ExpList(Exp(String)),")"))))))
+
+# Table field access dot
+local x = person.name
+==>
+Chunk(Block(LocalDeclaration(local,AttNameList(AttName(VariableName)),"=",ExpList(Exp(PrefixExp(Atom(VariableName),IndexProp(".",Identifier)))))))
+
+# Table field access bracket
+local x = person["name"]
+==>
+Chunk(Block(LocalDeclaration(local,AttNameList(AttName(VariableName)),"=",ExpList(Exp(PrefixExp(Atom(VariableName),IndexProp("[",Exp(String),"]")))))))
+
+# Table field access chaining
+local x = a.b.c["d"][1]
+==>
+Chunk(Block(LocalDeclaration(local,AttNameList(AttName(VariableName)),"=",ExpList(Exp(PrefixExp(Atom(VariableName),IndexProp(".",Identifier),IndexProp(".",Identifier),IndexProp("[",Exp(String),"]"),IndexProp("[",Exp(Number),"]")))))))
+
+# Scope isolation
+do local temp = 42 print(temp) end
+==>
+Chunk(Block(DoBlock(do,Block(LocalDeclaration(local,AttNameList(AttName(VariableName)),"=",ExpList(Exp(Number))),CallStatement(CallPrefix(Atom(VariableName),ParenCall(ParenArgs("(",ExpList(Exp(PrefixExp(Atom(VariableName)))),")"))))),end)))
+
+# Empty statement semicolons
+;;
+==>
+Chunk(Block(";",";"))
+
+# Semicolon separated
+local a = 1; local b = 2; print(a + b)
+==>
+Chunk(Block(LocalDeclaration(local,AttNameList(AttName(VariableName)),"=",ExpList(Exp(Number))),";",LocalDeclaration(local,AttNameList(AttName(VariableName)),"=",ExpList(Exp(Number))),";",CallStatement(CallPrefix(Atom(VariableName),ParenCall(ParenArgs("(",ExpList(Exp(BinaryExpression(Exp(PrefixExp(Atom(VariableName))),"+",Exp(PrefixExp(Atom(VariableName)))))),")"))))))
+
+# Trailing semicolon
+local x = 10;
+==>
+Chunk(Block(LocalDeclaration(local,AttNameList(AttName(VariableName)),"=",ExpList(Exp(Number))),";"))
+
+# File with only comments
+-- comment only
+--[[ block comment ]]
+==>
+Chunk(LineComment,BlockComment,Block)
+
+# Complex example from spec
+
+-- komentar satu baris
+--[[ komentar blok
+     bisa multi-baris
+--]]
+name = "Lua"
+version = 5.4
+person = {
+    name = "Alice",
+    age = 30,
+    tags = {"developer", "gamer"},
+    ["key with space"] = "value"
+}
+function greet(name)
+    return "Hello, " .. name .. "!"
+end
+local add = function(a, b)
+    return a + b
+end
+if x > 5 then
+    print("x is large")
+elseif x > 0 then
+    print("x is positive")
+else
+    print("x is zero or negative")
+end
+for k, v in pairs(person) do
+    print(k, v)
+end
+::retry::
+local ok = do_something()
+if not ok then
+    goto retry
+end
+
+==>
+Chunk(LineComment,BlockComment,Block(Assignment(Var(Atom(VariableName)),"=",ExpList(Exp(String))),Assignment(Var(Atom(VariableName)),"=",ExpList(Exp(Number))),Assignment(Var(Atom(VariableName)),"=",ExpList(Exp(TableConstructor("{",FieldList(Field(NamedField(FieldName(Identifier),"=",Exp(String))),FieldSep(","),Field(NamedField(FieldName(Identifier),"=",Exp(Number))),FieldSep(","),Field(NamedField(FieldName(Identifier),"=",Exp(TableConstructor("{",FieldList(Field(ExpField(Exp(String))),FieldSep(","),Field(ExpField(Exp(String)))),"}")))),FieldSep(","),Field(BracketField("[",Exp(String),"]","=",Exp(String)))),"}")))),FunctionDeclaration(function,FuncName(Identifier),FunctionBody("(",ParamList(VariableName),")",Block(ReturnStatement(return,ExpList(Exp(BinaryExpression(Exp(String),"..",Exp(BinaryExpression(Exp(PrefixExp(Atom(VariableName))),"..",Exp(String)))))))),end)),LocalDeclaration(local,AttNameList(AttName(VariableName)),"=",ExpList(Exp(FunctionDef(function,FunctionBody("(",ParamList(VariableName,",",VariableName),")",Block(ReturnStatement(return,ExpList(Exp(BinaryExpression(Exp(PrefixExp(Atom(VariableName))),"+",Exp(PrefixExp(Atom(VariableName)))))))),end))))),IfStatement(if,Exp(BinaryExpression(Exp(PrefixExp(Atom(VariableName))),">",Exp(Number))),then,Block(CallStatement(CallPrefix(Atom(VariableName),ParenCall(ParenArgs("(",ExpList(Exp(String)),")"))))),elseif,Exp(BinaryExpression(Exp(PrefixExp(Atom(VariableName))),">",Exp(Number))),then,Block(CallStatement(CallPrefix(Atom(VariableName),ParenCall(ParenArgs("(",ExpList(Exp(String)),")"))))),else,Block(CallStatement(CallPrefix(Atom(VariableName),ParenCall(ParenArgs("(",ExpList(Exp(String)),")"))))),end),ForStatement(for,ForGeneric(NameList(VariableName,",",VariableName),in,ExpList(Exp(PrefixExp(CallPrefix(Atom(VariableName),ParenCall(ParenArgs("(",ExpList(Exp(PrefixExp(Atom(VariableName)))),")"))))))),do,Block(CallStatement(CallPrefix(Atom(VariableName),ParenCall(ParenArgs("(",ExpList(Exp(PrefixExp(Atom(VariableName))),",",Exp(PrefixExp(Atom(VariableName)))),")"))))),end),Label("::",LabelName,"::"),LocalDeclaration(local,AttNameList(AttName(VariableName)),"=",ExpList(Exp(PrefixExp(CallPrefix(Atom(VariableName),ParenCall(ParenArgs("(",")"))))))),IfStatement(if,Exp(UnaryExpression(not,Exp(PrefixExp(Atom(VariableName))))),then,Block(GotoStatement(goto,LabelName)),end)))
+
+# Unary operators
+local x = -a; local y = not b; local z = ~c; local w = #d
+==>
+Chunk(Block(LocalDeclaration(local,AttNameList(AttName(VariableName)),"=",ExpList(Exp(UnaryExpression("-",Exp(PrefixExp(Atom(VariableName))))))),";",LocalDeclaration(local,AttNameList(AttName(VariableName)),"=",ExpList(Exp(UnaryExpression(not,Exp(PrefixExp(Atom(VariableName))))))),";",LocalDeclaration(local,AttNameList(AttName(VariableName)),"=",ExpList(Exp(UnaryExpression("~",Exp(PrefixExp(Atom(VariableName))))))),";",LocalDeclaration(local,AttNameList(AttName(VariableName)),"=",ExpList(Exp(UnaryExpression("#",Exp(PrefixExp(Atom(VariableName)))))))))
+
+# Table constructor field sep semicolon
+local t = {a = 1; b = 2; c = 3}
+==>
+Chunk(Block(LocalDeclaration(local,AttNameList(AttName(VariableName)),"=",ExpList(Exp(TableConstructor("{",FieldList(Field(NamedField(FieldName(Identifier),"=",Exp(Number))),FieldSep(";"),Field(NamedField(FieldName(Identifier),"=",Exp(Number))),FieldSep(";"),Field(NamedField(FieldName(Identifier),"=",Exp(Number)))),"}"))))))
+
+# Function call mixed args
+foo(1, "a", {key = "val"})
+==>
+Chunk(Block(CallStatement(CallPrefix(Atom(VariableName),ParenCall(ParenArgs("(",ExpList(Exp(Number),",",Exp(String),",",Exp(TableConstructor("{",FieldList(Field(NamedField(FieldName(Identifier),"=",Exp(String)))),"}"))),")"))))))
+
+# Check precedence power right associative
+local x = 2 ^ 3 ^ 2
+==>
+Chunk(Block(LocalDeclaration(local,AttNameList(AttName(VariableName)),"=",ExpList(Exp(BinaryExpression(Exp(Number),"^",Exp(BinaryExpression(Exp(Number),"^",Exp(Number)))))))))
+
+# Check precedence concat right associative
+local x = "a" .. "b" .. "c"
+==>
+Chunk(Block(LocalDeclaration(local,AttNameList(AttName(VariableName)),"=",ExpList(Exp(BinaryExpression(Exp(String),"..",Exp(BinaryExpression(Exp(String),"..",Exp(String)))))))))
+
+
+# Shebang
+#!/usr/bin/env lua
+local x = 1
+==>
+Chunk(Shebang,Block(LocalDeclaration(local,AttNameList(AttName(VariableName)),"=",ExpList(Exp(Number)))))
+
+# Shebang with code
+#!/usr/bin/lua
+print("hello")
+==>
+Chunk(Shebang,Block(CallStatement(CallPrefix(Atom(VariableName),ParenCall(ParenArgs("(",ExpList(Exp(String)),")"))))))
+
+# Long string level 3
+local s = [===[hello [=[nested]=] world]===]
+==>
+Chunk(Block(LocalDeclaration(local,AttNameList(AttName(VariableName)),"=",ExpList(Exp(LongString)))))
+
+# Block comment level 3
+--[===[ block comment with [[nested]] ]===]
+local x=1
+==>
+Chunk(BlockComment,Block(LocalDeclaration(local,AttNameList(AttName(VariableName)),"=",ExpList(Exp(Number)))))
+
+# Sugar call long string
+print [[hello world]]
+==>
+Chunk(Block(CallStatement(CallPrefix(Atom(VariableName),SugarCall(SugarArgs(LongString))))))
+
+# Sugar call long string level1
+print [=[hello]=]
+==>
+Chunk(Block(CallStatement(CallPrefix(Atom(VariableName),SugarCall(SugarArgs(LongString))))))
+
+# Sugar call chaining with index
+require "m".field.subfield()
+==>
+Chunk(Block(CallStatement(CallPrefix(Atom(VariableName),SugarCall(SugarArgs(String)),IndexProp(".",Identifier),IndexProp(".",Identifier),ParenCall(ParenArgs("(",")"))))))
+
+# Sugar call chaining complex
+print "hi".upper():rep(2)
+==>
+Chunk(Block(CallStatement(CallPrefix(Atom(VariableName),SugarCall(SugarArgs(String)),IndexProp(".",Identifier),ParenCall(ParenArgs("(",")")),ParenCall(":",Identifier,ParenArgs("(",ExpList(Exp(Number)),")"))))))
+
+# Binary underscore
+local x = 0b1010_0101_1111
+==>
+Chunk(Block(LocalDeclaration(local,AttNameList(AttName(VariableName)),"=",ExpList(Exp(Number)))))
+
+# Binary underscore small
+local x = 0b1_0_1_0
+==>
+Chunk(Block(LocalDeclaration(local,AttNameList(AttName(VariableName)),"=",ExpList(Exp(Number)))))
+
+# Hex underscore float
+local x = 0xFF_FF.AA_BB
+==>
+Chunk(Block(LocalDeclaration(local,AttNameList(AttName(VariableName)),"=",ExpList(Exp(Number)))))
+
+# Hex float with exponent
+local x = 0x1.FFp-10
+==>
+Chunk(Block(LocalDeclaration(local,AttNameList(AttName(VariableName)),"=",ExpList(Exp(Number)))))
+
+# Decimal float underscore
+local x = 1_000_000.5_5
+==>
+Chunk(Block(LocalDeclaration(local,AttNameList(AttName(VariableName)),"=",ExpList(Exp(Number)))))
+
+# Scientific underscore
+local x = 1_000e5_000
+==>
+Chunk(Block(LocalDeclaration(local,AttNameList(AttName(VariableName)),"=",ExpList(Exp(Number)))))
+
+# String escape z
+local s = "a\z  \n  b"
+==>
+Chunk(Block(LocalDeclaration(local,AttNameList(AttName(VariableName)),"=",ExpList(Exp(String)))))
+
+# String escape hex
+local s = "\x41\x42"
+==>
+Chunk(Block(LocalDeclaration(local,AttNameList(AttName(VariableName)),"=",ExpList(Exp(String)))))
+
+# String escape unicode
+local s = "\u{1F600} \u{0041}"
+==>
+Chunk(Block(LocalDeclaration(local,AttNameList(AttName(VariableName)),"=",ExpList(Exp(String)))))
+
+# String decimal escape
+local s = "\123\10"
+==>
+Chunk(Block(LocalDeclaration(local,AttNameList(AttName(VariableName)),"=",ExpList(Exp(String)))))
+
+# Table with mixed separators
+local t = {a=1; b=2, c=3; d=4,}
+==>
+Chunk(Block(LocalDeclaration(local,AttNameList(AttName(VariableName)),"=",ExpList(Exp(TableConstructor("{",FieldList(Field(NamedField(FieldName(Identifier),"=",Exp(Number))),FieldSep(";"),Field(NamedField(FieldName(Identifier),"=",Exp(Number))),FieldSep(","),Field(NamedField(FieldName(Identifier),"=",Exp(Number))),FieldSep(";"),Field(NamedField(FieldName(Identifier),"=",Exp(Number))),FieldSep(",")),"}"))))))
+
+# Table function def field
+local t = {func = function(a) return a end}
+==>
+Chunk(Block(LocalDeclaration(local,AttNameList(AttName(VariableName)),"=",ExpList(Exp(TableConstructor("{",FieldList(Field(NamedField(FieldName(Identifier),"=",Exp(FunctionDef(function,FunctionBody("(",ParamList(VariableName),")",Block(ReturnStatement(return,ExpList(Exp(PrefixExp(Atom(VariableName)))))),end)))))),"}"))))))
+
+# Local multiple attributes
+local a <const>, b <close> = 1, io.open("f")
+==>
+Chunk(Block(LocalDeclaration(local,AttNameList(AttName(VariableName,"<",Identifier,">"),",",AttName(VariableName,"<",Identifier,">")),"=",ExpList(Exp(Number),",",Exp(PrefixExp(CallPrefix(Atom(VariableName),IndexProp(".",Identifier),ParenCall(ParenArgs("(",ExpList(Exp(String)),")")))))))))
+
+# If with else and elseif nested
+if a then
+  if b then
+    print(1)
+  else
+    print(2)
+  end
+elseif c then
+  print(3)
+else
+  print(4)
+end
+==>
+Chunk(Block(IfStatement(if,Exp(PrefixExp(Atom(VariableName))),then,Block(IfStatement(if,Exp(PrefixExp(Atom(VariableName))),then,Block(CallStatement(CallPrefix(Atom(VariableName),ParenCall(ParenArgs("(",ExpList(Exp(Number)),")"))))),else,Block(CallStatement(CallPrefix(Atom(VariableName),ParenCall(ParenArgs("(",ExpList(Exp(Number)),")"))))),end)),elseif,Exp(PrefixExp(Atom(VariableName))),then,Block(CallStatement(CallPrefix(Atom(VariableName),ParenCall(ParenArgs("(",ExpList(Exp(Number)),")"))))),else,Block(CallStatement(CallPrefix(Atom(VariableName),ParenCall(ParenArgs("(",ExpList(Exp(Number)),")"))))),end)))
+
+# Goto inside function
+function foo()
+  ::loop::
+  print(1)
+  goto loop
+end
+==>
+Chunk(Block(FunctionDeclaration(function,FuncName(Identifier),FunctionBody("(",")",Block(Label("::",LabelName,"::"),CallStatement(CallPrefix(Atom(VariableName),ParenCall(ParenArgs("(",ExpList(Exp(Number)),")")))),GotoStatement(goto,LabelName)),end))))
+
+# Label after assignment
+x = 1
+::next::
+y = 2
+==>
+Chunk(Block(Assignment(Var(Atom(VariableName)),"=",ExpList(Exp(Number))),Label("::",LabelName,"::"),Assignment(Var(Atom(VariableName)),"=",ExpList(Exp(Number)))))
+
+# Unary not chain
+local x = not not true and not false
+==>
+Chunk(Block(LocalDeclaration(local,AttNameList(AttName(VariableName)),"=",ExpList(Exp(BinaryExpression(Exp(UnaryExpression(not,Exp(UnaryExpression(not,Exp(true))))),and,Exp(UnaryExpression(not,Exp(false)))))))))
+
+# Length operator chain
+local x = #a + #b * #c
+==>
+Chunk(Block(LocalDeclaration(local,AttNameList(AttName(VariableName)),"=",ExpList(Exp(BinaryExpression(Exp(UnaryExpression("#",Exp(PrefixExp(Atom(VariableName))))),"+",Exp(BinaryExpression(Exp(UnaryExpression("#",Exp(PrefixExp(Atom(VariableName))))),"*",Exp(UnaryExpression("#",Exp(PrefixExp(Atom(VariableName)))))))))))))
+
+# Method definition full
+function a.b.c:d(e, f) return self end
+==>
+Chunk(Block(FunctionDeclaration(function,FuncName(Identifier,".",Identifier,".",Identifier,":",Identifier),FunctionBody("(",ParamList(VariableName,",",VariableName),")",Block(ReturnStatement(return,ExpList(Exp(PrefixExp(Atom(VariableName)))))),end))))
+
+# Method call colon sugar
+obj:method "hello"
+==>
+Chunk(Block(CallStatement(CallPrefix(Atom(VariableName),SugarCall(":",Identifier,SugarArgs(String))))))
+
+# Vararg in call
+function foo(a, ...) return select(1, ...) end
+==>
+Chunk(Block(FunctionDeclaration(function,FuncName(Identifier),FunctionBody("(",ParamList(VariableName,",",Ellipsis("...")),")",Block(ReturnStatement(return,ExpList(Exp(PrefixExp(CallPrefix(Atom(VariableName),ParenCall(ParenArgs("(",ExpList(Exp(Number),",",Exp(Ellipsis("..."))),")")))))))),end))))
+
+# Empty return with semicolon
+function foo() return; end
+==>
+Chunk(Block(FunctionDeclaration(function,FuncName(Identifier),FunctionBody("(",")",Block(ReturnStatement(return,";")),end))))
+
+# Double semicolon handling
+local a=1;; local b=2
+==>
+Chunk(Block(LocalDeclaration(local,AttNameList(AttName(VariableName)),"=",ExpList(Exp(Number))),";",";",LocalDeclaration(local,AttNameList(AttName(VariableName)),"=",ExpList(Exp(Number)))))
+
+# Hex p exponent negative
+local x = 0x1p-10
+==>
+Chunk(Block(LocalDeclaration(local,AttNameList(AttName(VariableName)),"=",ExpList(Exp(Number)))))
+
+# String with all escapes
+local s = "hello\n\r\t\b\f\v\\\"\'"
+==>
+Chunk(Block(LocalDeclaration(local,AttNameList(AttName(VariableName)),"=",ExpList(Exp(String)))))
+
+# Complex real world neovim snippet
+local map = vim.keymap.set
+map("n", "<leader>ff", function() require("telescope.builtin").find_files() end, {noremap = true})
+==>
+Chunk(Block(LocalDeclaration(local,AttNameList(AttName(VariableName)),"=",ExpList(Exp(PrefixExp(Atom(VariableName),IndexProp(".",Identifier),IndexProp(".",Identifier))))),CallStatement(CallPrefix(Atom(VariableName),ParenCall(ParenArgs("(",ExpList(Exp(String),",",Exp(String),",",Exp(FunctionDef(function,FunctionBody("(",")",Block(CallStatement(CallPrefix(Atom(VariableName),ParenCall(ParenArgs("(",ExpList(Exp(String)),")")),IndexProp(".",Identifier),ParenCall(ParenArgs("(",")"))))),end))),",",Exp(TableConstructor("{",FieldList(Field(NamedField(FieldName(Identifier),"=",Exp(true)))),"}"))),")"))))))
+
+# Table bracket key with exp
+local t = {[1+2] = "three", ["key"..1] = 4}
+==>
+Chunk(Block(LocalDeclaration(local,AttNameList(AttName(VariableName)),"=",ExpList(Exp(TableConstructor("{",FieldList(Field(BracketField("[",Exp(BinaryExpression(Exp(Number),"+",Exp(Number))),"]","=",Exp(String))),FieldSep(","),Field(BracketField("[",Exp(BinaryExpression(Exp(String),"..",Exp(Number))),"]","=",Exp(Number)))),"}"))))))
+
+# Number hex underscore with p
+local x = 0xFF_FF
+==>
+Chunk(Block(LocalDeclaration(local,AttNameList(AttName(VariableName)),"=",ExpList(Exp(Number)))))
+
+# Attribute close toclose alias
+local f <close> = io.open("x")
+==>
+Chunk(Block(LocalDeclaration(local,AttNameList(AttName(VariableName,"<",Identifier,">")),"=",ExpList(Exp(PrefixExp(CallPrefix(Atom(VariableName),IndexProp(".",Identifier),ParenCall(ParenArgs("(",ExpList(Exp(String)),")")))))))))

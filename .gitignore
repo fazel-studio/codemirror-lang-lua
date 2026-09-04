@@ -1,0 +1,9 @@
+node_modules
+dist
+src/parser.js
+src/parser.terms.js
+.DS_Store
+npm-debug.log*
+*.tgz
+
+modules/

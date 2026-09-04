@@ -1,0 +1,242 @@
+@top Chunk { Shebang? Block }
+
+@skip { space | newline | LineComment | BlockComment }
+
+@precedence {
+  call @left,
+  power @right,
+  unary,
+  times @left,
+  plus @left,
+  concat @right,
+  shift @left,
+  bitand @left,
+  xor @left,
+  bitor @left,
+  compare @left,
+  and @left,
+  or @left
+}
+
+@external tokens longString from "./tokens.js" { LongString }
+@external tokens blockComment from "./tokens.js" { BlockComment }
+
+Block { statement* ReturnStatement? }
+
+ReturnStatement { kw<"return"> ExpList? ";"? }
+
+statement {
+  ";" |
+  Label |
+  kw<"break"> |
+  GotoStatement |
+  DoBlock |
+  WhileBlock |
+  RepeatBlock |
+  IfStatement |
+  ForStatement |
+  FunctionDeclaration |
+  LocalFunctionDeclaration |
+  LocalDeclaration |
+  Assignment |
+  CallStatement
+}
+
+CallStatement { CallPrefix }
+
+Label { "::" LabelName "::" }
+
+GotoStatement { kw<"goto"> LabelName }
+
+DoBlock { kw<"do"> Block kw<"end"> }
+
+WhileBlock { kw<"while"> Exp kw<"do"> Block kw<"end"> }
+
+RepeatBlock { kw<"repeat"> Block kw<"until"> Exp }
+
+IfStatement {
+  kw<"if"> Exp kw<"then"> Block
+  (kw<"elseif"> Exp kw<"then"> Block)*
+  (kw<"else"> Block)?
+  kw<"end">
+}
+
+ForStatement {
+  kw<"for"> (ForNumeric | ForGeneric) kw<"do"> Block kw<"end">
+}
+
+ForNumeric { VariableName "=" Exp "," Exp ("," Exp)? }
+
+ForGeneric { NameList kw<"in"> ExpList }
+
+FunctionDeclaration { kw<"function"> FuncName FunctionBody }
+
+LocalFunctionDeclaration { kw<"local"> kw<"function"> VariableName FunctionBody }
+
+FuncName { Identifier ("." Identifier)* (":" Identifier)? }
+
+FunctionBody { "(" ParamList? ")" Block kw<"end"> }
+
+ParamList {
+  VariableName ("," VariableName)* ("," Ellipsis)? |
+  Ellipsis
+}
+
+NameList { VariableName ("," VariableName)* }
+
+LocalDeclaration { kw<"local"> AttNameList ("=" ExpList)? }
+
+AttNameList { AttName ("," AttName)* }
+
+AttName { VariableName ("<" Identifier ">")? }
+
+Var { Atom IndexProp* }
+
+Assignment { Var ("," Var)* "=" ExpList }
+
+ExpList { Exp ("," Exp)* }
+
+Exp {
+  kw<"nil"> |
+  kw<"true"> |
+  kw<"false"> |
+  Number |
+  String |
+  LongString |
+  Ellipsis |
+  TableConstructor |
+  FunctionDef |
+  UnaryExpression |
+  BinaryExpression |
+  PrefixExp
+}
+
+FunctionDef { kw<"function"> FunctionBody }
+
+TableConstructor { "{" FieldList? "}" }
+
+FieldList { Field (FieldSep Field)* FieldSep? }
+
+Field {
+  BracketField { "[" Exp "]" "=" Exp } |
+  NamedField { FieldName "=" Exp } |
+  ExpField { Exp }
+}
+
+FieldName { Identifier }
+
+PrefixExp {
+  Atom IndexProp* |
+  CallPrefix
+}
+
+Atom {
+  VariableName |
+  Parens
+}
+
+Parens { "(" Exp ")" }
+
+IndexProp {
+  "[" Exp "]" |
+  "." Identifier
+}
+
+ParenArgs {
+  "(" ExpList? ")"
+}
+
+SugarArgs {
+  String |
+  LongString |
+  TableConstructor
+}
+
+ParenCall {
+  !call ParenArgs |
+  ":" Identifier !call ParenArgs
+}
+
+SugarCall {
+  SugarArgs |
+  ":" Identifier SugarArgs
+}
+
+CallPrefix {
+  Atom IndexProp* ParenCall (IndexProp | ParenCall)* |
+  Atom IndexProp* SugarCall (IndexProp | ParenCall)*
+}
+
+UnaryExpression {
+  kw<"not"> !unary Exp |
+  "#" !unary Exp |
+  "-" !unary Exp |
+  "~" !unary Exp
+}
+
+BinaryExpression {
+  Exp !or kw<"or"> Exp |
+  Exp !and kw<"and"> Exp |
+  Exp !compare "<" Exp |
+  Exp !compare ">" Exp |
+  Exp !compare "<=" Exp |
+  Exp !compare ">=" Exp |
+  Exp !compare "==" Exp |
+  Exp !compare "~=" Exp |
+  Exp !bitor "|" Exp |
+  Exp !xor "~" Exp |
+  Exp !bitand "&" Exp |
+  Exp !shift "<<" Exp |
+  Exp !shift ">>" Exp |
+  Exp !concat ".." Exp |
+  Exp !plus "+" Exp |
+  Exp !plus "-" Exp |
+  Exp !times "*" Exp |
+  Exp !times "/" Exp |
+  Exp !times "%" Exp |
+  Exp !times "//" Exp |
+  Exp !power "^" Exp
+}
+
+kw<term> { @specialize[@name={term}]<identifier, term> }
+
+Identifier { identifier }
+VariableName { identifier }
+LabelName { identifier }
+Ellipsis { "..." }
+
+FieldSep { "," | ";" }
+
+@tokens {
+  identifier { (std.asciiLetter | "_") (std.asciiLetter | std.digit | "_")* }
+
+  String {
+    '"' (stringEscape | !["\\\n\r])* '"' |
+    "'" (stringEscape | !['\\\n\r])* "'"
+  }
+
+  stringEscape {
+    "\\" ($[abfnrtvz"'\\] | digit digit? digit? | "x" hex hex | "u{" hex+ "}")
+  }
+
+  hex { $[0-9a-fA-F] }
+  digit { std.digit }
+
+  Number {
+    "0" $[xX] hex hex* ("_" hex+)* ("." hex hex* ("_" hex+)*)? ($[pP] $[+\-]? digit digit* ("_" digit+)*)? |
+    "0" $[bB] $[01] ($[01] | "_" $[01])* |
+    digit digit* ("_" digit+)* ("." digit digit* ("_" digit+)*)? ($[eE] $[+\-]? digit digit* ("_" digit+)*)? |
+    "." digit digit* ("_" digit+)* ($[eE] $[+\-]? digit digit* ("_" digit+)*)?
+  }
+
+  LineComment { "--" ![\n\r]* }
+
+  Shebang { "#!" ![\n\r]* }
+
+  space { $[ \t\f]+ }
+  newline { $[\n\r] | "\r\n" | "\n\r" }
+
+  @precedence { Shebang, LineComment, "//", "<<", ">>", "<=", ">=", "==", "~=", "...", "..", "::", "-", identifier }
+
+  "(" ")" "[" "]" "{" "}" "," ";" ":" "." "#" "~" "&" "|" "^" "%" "/" "*" "+" "-" "=" "<" ">" "::" "//" "<<" ">>" "<=" ">=" "==" "~=" ".." "..."
+}
